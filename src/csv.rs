@@ -41,7 +41,6 @@ mod tests {
         error::ParsingError,
         model::{Transaction, TxType},
     };
-    use tokio::io::BufReader;
 
     #[rstest]
     #[tokio::test]
@@ -62,8 +61,6 @@ mod tests {
         type,client,tx,amount"
     }.as_slice(), vec![])]
     async fn test_parse_csv(#[case] input: &[u8], #[case] expected: Vec<Transaction>) {
-        BufReader::new(input);
-
         let result = parse_csv(input).await;
 
         let actual = result
@@ -91,8 +88,6 @@ mod tests {
             
         ])]
     async fn test_parse_csv_whitespace(#[case] input: &[u8], #[case] expected: Vec<Transaction>) {
-        BufReader::new(input);
-
         let result = parse_csv(input).await;
 
         let actual = result
@@ -108,8 +103,6 @@ mod tests {
         b""
     }.as_slice())]
     async fn test_parse_csv_no_records(#[case] input: &[u8]) {
-        BufReader::new(input);
-
         let result = parse_csv(input).await;
 
         let actual = result.try_collect::<Vec<_>>().await;
@@ -125,8 +118,6 @@ mod tests {
         "
     }.as_slice())]
     async fn test_parse_csv_deserialize(#[case] input: &[u8]) {
-        BufReader::new(input);
-
         let result = parse_csv(input).await;
 
         let actual = result.try_collect::<Vec<_>>().await;
@@ -142,8 +133,6 @@ mod tests {
         "
     }.as_slice())]
     async fn test_parse_csv_invalid_transaction_type(#[case] input: &[u8]) {
-        BufReader::new(input);
-
         let result = parse_csv(input).await;
 
         let actual = result.try_collect::<Vec<_>>().await;
@@ -159,8 +148,6 @@ mod tests {
         "
     }.as_slice())]
     async fn test_parse_csv_invalid_client_id(#[case] input: &[u8]) {
-        BufReader::new(input);
-
         let result = parse_csv(input).await;
 
         let actual = result.try_collect::<Vec<_>>().await;
@@ -176,8 +163,6 @@ mod tests {
         "
     }.as_slice())]
     async fn test_parse_csv_invalid_tx_id(#[case] input: &[u8]) {
-        BufReader::new(input);
-
         let result = parse_csv(input).await;
 
         let actual = result.try_collect::<Vec<_>>().await;
@@ -193,8 +178,6 @@ mod tests {
         "
     }.as_slice())]
     async fn test_parse_csv_invalid_amount(#[case] input: &[u8]) {
-        BufReader::new(input);
-
         let result = parse_csv(input).await;
 
         let actual = result.try_collect::<Vec<_>>().await;
@@ -216,8 +199,6 @@ mod tests {
             Transaction{tx_type: TxType::Chargeback, client_id: 1, tx_id: 3, amount: None}
         ])]
     async fn test_parse_csv_dispute_resolve_chargeback(#[case] input: &[u8], #[case] expected: Vec<Transaction>) {
-        BufReader::new(input);
-
         let result = parse_csv(input).await;
 
         let actual = result
@@ -242,8 +223,6 @@ mod tests {
             Transaction{tx_type: TxType::Withdrawal, client_id: 1, tx_id: 3, amount: Some(999999.9999)}
         ])]
     async fn test_parse_csv_precise_amounts(#[case] input: &[u8], #[case] expected: Vec<Transaction>) {
-        BufReader::new(input);
-
         let result = parse_csv(input).await;
 
         let actual = result
@@ -264,8 +243,6 @@ mod tests {
             Transaction{tx_type: TxType::Deposit, client_id: 65535, tx_id: 4294967295, amount: Some(100.0)}
         ])]
     async fn test_parse_csv_max_ids(#[case] input: &[u8], #[case] expected: Vec<Transaction>) {
-        BufReader::new(input);
-
         let result = parse_csv(input).await;
 
         let actual = result
