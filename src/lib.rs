@@ -4,7 +4,8 @@ use futures_util::StreamExt;
 
 use crate::error::Error;
 use crate::model::{
-    Chargeback, Deposit, Dispute, Resolve, State, TransactionHandler, TxType, Withdrawal,
+    State, TransactionHandler, TxType, chargeback::Chargeback, deposit::Deposit, dispute::Dispute,
+    resolve::Resolve, withdrawal::Withdrawal,
 };
 
 mod csv;
