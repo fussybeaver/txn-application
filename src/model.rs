@@ -34,7 +34,7 @@ pub struct State {
     pub transactions: HashMap<TxId, Box<dyn TransactionHandler>>,
 }
 
-/// Identifies a Transaction as desieralized from the CSV file.
+/// Identifies a Transaction as deserialized from the CSV file.
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct Transaction {
     #[serde(rename = "type")]
