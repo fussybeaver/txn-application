@@ -83,7 +83,7 @@ impl TransactionHandler for Chargeback {
 
         tx.set_status(TxStatus::Chargeback);
 
-        // Check if a previous dispute left the account in arrears
+        // Check if a previous dispute(s) left the account in arrears
         // and should fail the chargeback due to a negative balance
         if account.available < 0. {
             return Err(TransactionError::BalanceInsufficient {

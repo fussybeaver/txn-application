@@ -147,23 +147,23 @@ mod tests {
         assert!(!state.accounts[&1].locked);
     }
 
-    #[test]
-    fn test_deposit_multi_user() {
-        let mut state = State::default();
-
-        let deposit1 = Deposit::new(Transaction {
+    #[rstest]
+    #[case::deposit_multi_user(
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1,
             client_id: 1,
             amount: Some(100.0),
-        });
-
-        let deposit2 = Deposit::new(Transaction {
+        }),
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 2,
             client_id: 2,
             amount: Some(200.0),
-        });
+        })
+    )]
+    fn test_deposit_multi_user(#[case] deposit1: Deposit, #[case] deposit2: Deposit) {
+        let mut state = State::default();
 
         deposit1.handle(&mut state).unwrap();
 
@@ -187,25 +187,26 @@ mod tests {
         assert_eq!(state.transactions[&2].client_id(), 2);
         assert_eq!(state.transactions[&2].amount(), Some(200.0));
     }
-    #[test]
-    fn test_withdrawal() {
-        let mut state = State::default();
 
-        let deposit = Deposit::new(Transaction {
+    #[rstest]
+    #[case::withdrawal(
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1,
             client_id: 1,
             amount: Some(100.0),
-        });
-
-        deposit.handle(&mut state).unwrap();
-
-        let withdrawal = Withdrawal::new(Transaction {
+        }),
+        Withdrawal::new(Transaction {
             tx_type: TxType::Withdrawal,
             tx_id: 2,
             client_id: 1,
             amount: Some(50.0),
-        });
+        })
+    )]
+    fn test_withdrawal(#[case] deposit: Deposit, #[case] withdrawal: Withdrawal) {
+        let mut state = State::default();
+
+        deposit.handle(&mut state).unwrap();
 
         withdrawal.handle(&mut state).unwrap();
 
@@ -219,25 +220,25 @@ mod tests {
         assert_eq!(state.transactions[&2].amount(), Some(50.0));
     }
 
-    #[test]
-    fn test_withdrawal_overdraw() {
-        let mut state = State::default();
-
-        let deposit = Deposit::new(Transaction {
+    #[rstest]
+    #[case::withdrawal_overdraw(
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1,
             client_id: 1,
             amount: Some(100.0),
-        });
-
-        deposit.handle(&mut state).unwrap();
-
-        let withdrawal = Withdrawal::new(Transaction {
+        }),
+        Withdrawal::new(Transaction {
             tx_type: TxType::Withdrawal,
             tx_id: 2,
             client_id: 1,
             amount: Some(101.0),
-        });
+        })
+    )]
+    fn test_withdrawal_overdraw(#[case] deposit: Deposit, #[case] withdrawal: Withdrawal) {
+        let mut state = State::default();
+
+        deposit.handle(&mut state).unwrap();
 
         let res = withdrawal.handle(&mut state);
 
@@ -252,16 +253,17 @@ mod tests {
         assert!(!state.accounts[&1].locked);
     }
 
-    #[test]
-    fn test_withdrawal_from_nonexistent_account() {
-        let mut state = State::default();
-
-        let withdrawal = Withdrawal::new(Transaction {
+    #[rstest]
+    #[case::test_withdrawal_from_nonexistent_account(
+        Withdrawal::new(Transaction {
             tx_type: TxType::Withdrawal,
             tx_id: 1,
             client_id: 1,
             amount: Some(100.0),
-        });
+        })
+    )]
+    fn test_withdrawal_from_nonexistent_account(#[case] withdrawal: Withdrawal) {
+        let mut state = State::default();
 
         let res = withdrawal.handle(&mut state);
 
@@ -274,26 +276,26 @@ mod tests {
         assert!(!state.accounts.contains_key(&1));
     }
 
-    #[test]
-    fn test_duplicate_transaction() {
-        let mut state = State::default();
-
-        let deposit = Deposit::new(Transaction {
+    #[rstest]
+    #[case::test_duplicate_transaction(
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1,
             client_id: 1,
             amount: Some(100.0),
-        });
-
-        deposit.handle(&mut state).unwrap();
-
+        }),
         // Duplicate - attempt to process same transaction ID again
-        let duplicate_deposit = Deposit::new(Transaction {
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1, // Same tx_id
             client_id: 1,
             amount: Some(100.0),
-        });
+        })
+    )]
+    fn test_duplicate_transaction(#[case] deposit: Deposit, #[case] duplicate_deposit: Deposit) {
+        let mut state = State::default();
+
+        deposit.handle(&mut state).unwrap();
 
         let res = duplicate_deposit.handle(&mut state);
 
@@ -308,16 +310,17 @@ mod tests {
         assert!(!state.accounts[&1].locked);
     }
 
-    #[test]
-    fn test_negative_amount_deposit() {
-        let mut state = State::default();
-
-        let deposit = Deposit::new(Transaction {
+    #[rstest]
+    #[case::test_negative_amount_deposit(
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1,
             client_id: 1,
             amount: Some(-100.0),
-        });
+        })
+    )]
+    fn test_negative_amount_deposit(#[case] deposit: Deposit) {
+        let mut state = State::default();
 
         let res = deposit.handle(&mut state);
 
@@ -327,24 +330,25 @@ mod tests {
         assert!(!state.accounts.contains_key(&1));
     }
 
-    #[test]
-    fn test_negative_amount_withdrawal() {
-        let mut state = State::default();
-
-        let deposit = Deposit::new(Transaction {
+    #[rstest]
+    #[case::test_negative_amount_withdrawal(
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1,
             client_id: 1,
             amount: Some(100.0),
-        });
-        deposit.handle(&mut state).unwrap();
-
-        let withdrawal = Withdrawal::new(Transaction {
+        }),
+        Withdrawal::new(Transaction {
             tx_type: TxType::Withdrawal,
             tx_id: 2,
             client_id: 1,
             amount: Some(-50.0),
-        });
+        })
+    )]
+    fn test_negative_amount_withdrawal(#[case] deposit: Deposit, #[case] withdrawal: Withdrawal) {
+        let mut state = State::default();
+
+        deposit.handle(&mut state).unwrap();
 
         let res = withdrawal.handle(&mut state);
 
@@ -356,16 +360,17 @@ mod tests {
         assert_eq!(state.accounts[&1].total, 100.0);
     }
 
-    #[test]
-    fn test_deposit_missing_amount() {
-        let mut state = State::default();
-
-        let deposit = Deposit::new(Transaction {
+    #[rstest]
+    #[case::test_deposit_missing_amount(
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1,
             client_id: 1,
             amount: None,
-        });
+        })
+    )]
+    fn test_deposit_missing_amount(#[case] deposit: Deposit) {
+        let mut state = State::default();
 
         let res = deposit.handle(&mut state);
 
@@ -375,24 +380,25 @@ mod tests {
         assert!(!state.accounts.contains_key(&1));
     }
 
-    #[test]
-    fn test_withdrawal_missing_amount() {
-        let mut state = State::default();
-
-        let deposit = Deposit::new(Transaction {
+    #[rstest]
+    #[case::test_withdrawal_missing_amount(
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1,
             client_id: 1,
             amount: Some(100.0),
-        });
-        deposit.handle(&mut state).unwrap();
-
-        let withdrawal = Withdrawal::new(Transaction {
+        }),
+        Withdrawal::new(Transaction {
             tx_type: TxType::Withdrawal,
             tx_id: 2,
             client_id: 1,
             amount: None,
-        });
+        })
+    )]
+    fn test_withdrawal_missing_amount(#[case] deposit: Deposit, #[case] withdrawal: Withdrawal) {
+        let mut state = State::default();
+
+        deposit.handle(&mut state).unwrap();
 
         let res = withdrawal.handle(&mut state);
 
@@ -404,42 +410,43 @@ mod tests {
         assert_eq!(state.accounts[&1].total, 100.0);
     }
 
-    #[test]
-    fn test_dispute_non_existent_tx() {
-        let mut state = State::default();
-
-        let dispute = Dispute::new(Transaction {
+    #[rstest]
+    #[case::test_dispute_non_existent_tx(
+        Dispute::new(Transaction {
             tx_type: TxType::Dispute,
             tx_id: 1,
             client_id: 1,
             amount: None,
-        });
+        })
+    )]
+    fn test_dispute_non_existent_tx(#[case] dispute: Dispute) {
+        let mut state = State::default();
 
         let res = dispute.handle(&mut state);
 
         assert!(matches!(res, Err(TransactionError::NotFound { .. })));
     }
 
-    #[test]
-    fn test_dispute_client_mismatch() {
-        let mut state = State::default();
-
-        let deposit = Deposit::new(Transaction {
+    #[rstest]
+    #[case::test_dispute_client_mismatch(
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1,
             client_id: 1,
             amount: Some(100.0),
-        });
-
-        deposit.handle(&mut state).unwrap();
-
-        let dispute = Dispute::new(Transaction {
+        }),
+        Dispute::new(Transaction {
             tx_type: TxType::Dispute,
             tx_id: 1,
             // Client ID does not match.
             client_id: 2,
             amount: None,
-        });
+        })
+    )]
+    fn test_dispute_client_mismatch(#[case] deposit: Deposit, #[case] dispute: Dispute) {
+        let mut state = State::default();
+
+        deposit.handle(&mut state).unwrap();
 
         let res = dispute.handle(&mut state);
 
@@ -449,34 +456,37 @@ mod tests {
         ));
     }
 
-    #[test]
-    fn test_dispute_transaction() {
-        let mut state = State::default();
-
-        let deposit = Deposit::new(Transaction {
+    #[rstest]
+    #[case::test_dispute_transaction(
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1,
             client_id: 1,
             amount: Some(100.0),
-        });
-
-        deposit.handle(&mut state).unwrap();
-
-        let deposit = Deposit::new(Transaction {
+        }),
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 2,
             client_id: 1,
             amount: Some(50.0),
-        });
-
-        deposit.handle(&mut state).unwrap();
-
-        let dispute = Dispute::new(Transaction {
+        }),
+        Dispute::new(Transaction {
             tx_type: TxType::Dispute,
             tx_id: 1,
             client_id: 1,
             amount: None,
-        });
+        })
+    )]
+    fn test_dispute_transaction(
+        #[case] deposit1: Deposit,
+        #[case] deposit2: Deposit,
+        #[case] dispute: Dispute,
+    ) {
+        let mut state = State::default();
+
+        deposit1.handle(&mut state).unwrap();
+
+        deposit2.handle(&mut state).unwrap();
 
         dispute.handle(&mut state).unwrap();
 
@@ -485,34 +495,37 @@ mod tests {
         assert_eq!(state.accounts[&1].total, 150.0);
     }
 
-    #[test]
-    fn test_dispute_withdrawal() {
-        let mut state = State::default();
-
-        let deposit = Deposit::new(Transaction {
+    #[rstest]
+    #[case::test_dispute_withdrawal(
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1,
             client_id: 1,
             amount: Some(100.0),
-        });
-
-        deposit.handle(&mut state).unwrap();
-
-        let deposit = Withdrawal::new(Transaction {
+        }),
+        Withdrawal::new(Transaction {
             tx_type: TxType::Withdrawal,
             tx_id: 2,
             client_id: 1,
             amount: Some(50.0),
-        });
-
-        deposit.handle(&mut state).unwrap();
-
-        let dispute = Dispute::new(Transaction {
+        }),
+        Dispute::new(Transaction {
             tx_type: TxType::Dispute,
             tx_id: 2,
             client_id: 1,
             amount: None,
-        });
+        })
+    )]
+    fn test_dispute_withdrawal(
+        #[case] deposit: Deposit,
+        #[case] withdrawal: Withdrawal,
+        #[case] dispute: Dispute,
+    ) {
+        let mut state = State::default();
+
+        deposit.handle(&mut state).unwrap();
+
+        withdrawal.handle(&mut state).unwrap();
 
         let res = dispute.handle(&mut state);
 
@@ -528,42 +541,43 @@ mod tests {
         assert_eq!(state.accounts[&1].total, 50.0);
     }
 
-    #[test]
-    fn test_resolve_non_existent_tx() {
-        let mut state = State::default();
-
-        let resolve = Resolve::new(Transaction {
+    #[rstest]
+    #[case::test_resolve_non_existent_tx(
+        Resolve::new(Transaction {
             tx_type: TxType::Resolve,
             tx_id: 1,
             client_id: 1,
             amount: None,
-        });
+        })
+    )]
+    fn test_resolve_non_existent_tx(#[case] resolve: Resolve) {
+        let mut state = State::default();
 
         let res = resolve.handle(&mut state);
 
         assert!(matches!(res, Err(TransactionError::NotFound { .. })));
     }
 
-    #[test]
-    fn test_resolve_incorrect_state() {
-        let mut state = State::default();
-
-        let deposit = Deposit::new(Transaction {
+    #[rstest]
+    #[case::test_resolve_incorrect_state(
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1,
             client_id: 1,
             amount: Some(100.0),
-        });
-
-        deposit.handle(&mut state).unwrap();
-
-        let resolve = Resolve::new(Transaction {
+        }),
+        Resolve::new(Transaction {
             tx_type: TxType::Resolve,
             tx_id: 1,
             // Client ID does not match.
             client_id: 2,
             amount: None,
-        });
+        })
+    )]
+    fn test_resolve_incorrect_state(#[case] deposit: Deposit, #[case] resolve: Resolve) {
+        let mut state = State::default();
+
+        deposit.handle(&mut state).unwrap();
 
         let res = resolve.handle(&mut state);
 
@@ -574,41 +588,47 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_chargeback_non_existent_tx() {
-        let mut state = State::default();
-
-        let chargeback = Chargeback::new(Transaction {
+    #[rstest]
+    #[case::test_chargeback_non_existent_tx(
+        Chargeback::new(Transaction {
             tx_type: TxType::Chargeback,
             tx_id: 1,
             client_id: 1,
             amount: None,
-        });
+        })
+    )]
+    fn test_chargeback_non_existent_tx(#[case] chargeback: Chargeback) {
+        let mut state = State::default();
 
         let res = chargeback.handle(&mut state);
 
         assert!(matches!(res, Err(TransactionError::NotFound { .. })));
     }
 
-    #[test]
-    fn test_chargeback_non_disputed_transaction() {
-        let mut state = State::default();
-
-        let deposit = Deposit::new(Transaction {
+    #[rstest]
+    #[case::test_chargeback_non_disputed_transaction(
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1,
             client_id: 1,
             amount: Some(100.0),
-        });
-        deposit.handle(&mut state).unwrap();
-
-        // Try chargeback without dispute first
-        let chargeback = Chargeback::new(Transaction {
+        }),
+        Chargeback::new(Transaction {
             tx_type: TxType::Chargeback,
             tx_id: 1,
             client_id: 1,
             amount: None,
-        });
+        })
+    )]
+    fn test_chargeback_non_disputed_transaction(
+        #[case] deposit: Deposit,
+        #[case] chargeback: Chargeback,
+    ) {
+        let mut state = State::default();
+
+        deposit.handle(&mut state).unwrap();
+
+        // Try chargeback without dispute first
         let res = chargeback.handle(&mut state);
 
         // Should fail because a Chargeback needs to be disputed first
@@ -624,47 +644,50 @@ mod tests {
         assert!(!state.accounts[&1].locked);
     }
 
-    #[test]
-    fn test_chargeback_transaction() {
-        let mut state = State::default();
-
-        let deposit = Deposit::new(Transaction {
+    #[rstest]
+    #[case::test_chargeback_transaction(
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1,
             client_id: 1,
             amount: Some(100.0),
-        });
-
-        deposit.handle(&mut state).unwrap();
-
-        let deposit = Deposit::new(Transaction {
+        }),
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 2,
             client_id: 1,
             amount: Some(50.0),
-        });
-
-        deposit.handle(&mut state).unwrap();
-
-        let dispute = Dispute::new(Transaction {
+        }),
+        Dispute::new(Transaction {
             tx_type: TxType::Dispute,
             tx_id: 1,
             client_id: 1,
             amount: None,
-        });
+        }),
+        Chargeback::new(Transaction {
+            tx_type: TxType::Chargeback,
+            tx_id: 1,
+            client_id: 1,
+            amount: None,
+        })
+    )]
+    fn test_chargeback_transaction(
+        #[case] deposit1: Deposit,
+        #[case] deposit2: Deposit,
+        #[case] dispute: Dispute,
+        #[case] chargeback: Chargeback,
+    ) {
+        let mut state = State::default();
+
+        deposit1.handle(&mut state).unwrap();
+
+        deposit2.handle(&mut state).unwrap();
 
         dispute.handle(&mut state).unwrap();
 
         assert_eq!(state.accounts[&1].available, 50.0);
         assert_eq!(state.accounts[&1].held, 100.0);
         assert_eq!(state.accounts[&1].total, 150.0);
-
-        let chargeback = Chargeback::new(Transaction {
-            tx_type: TxType::Chargeback,
-            tx_id: 1,
-            client_id: 1,
-            amount: None,
-        });
 
         chargeback.handle(&mut state).unwrap();
 
@@ -674,47 +697,50 @@ mod tests {
         assert!(state.accounts[&1].locked);
     }
 
-    #[test]
-    fn test_chargeback_transaction_negative_balance_resolve() {
-        let mut state = State::default();
-
-        let deposit = Deposit::new(Transaction {
+    #[rstest]
+    #[case::test_chargeback_transaction_negative_balance_resolve(
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1,
             client_id: 1,
             amount: Some(100.0),
-        });
-
-        deposit.handle(&mut state).unwrap();
-
-        let withdrawal = Withdrawal::new(Transaction {
+        }),
+        Withdrawal::new(Transaction {
             tx_type: TxType::Withdrawal,
             tx_id: 2,
             client_id: 1,
             amount: Some(50.0),
-        });
-
-        withdrawal.handle(&mut state).unwrap();
-
-        let dispute = Dispute::new(Transaction {
+        }),
+        Dispute::new(Transaction {
             tx_type: TxType::Dispute,
             tx_id: 1,
             client_id: 1,
             amount: None,
-        });
+        }),
+        Resolve::new(Transaction {
+            tx_type: TxType::Resolve,
+            tx_id: 1,
+            client_id: 1,
+            amount: None,
+        })
+    )]
+    fn test_chargeback_transaction_negative_balance_resolve(
+        #[case] deposit: Deposit,
+        #[case] withdrawal: Withdrawal,
+        #[case] dispute: Dispute,
+        #[case] resolve: Resolve,
+    ) {
+        let mut state = State::default();
+
+        deposit.handle(&mut state).unwrap();
+
+        withdrawal.handle(&mut state).unwrap();
 
         dispute.handle(&mut state).unwrap();
 
         assert_eq!(state.accounts[&1].available, -50.0);
         assert_eq!(state.accounts[&1].held, 100.0);
         assert_eq!(state.accounts[&1].total, 50.0);
-
-        let resolve = Resolve::new(Transaction {
-            tx_type: TxType::Resolve,
-            tx_id: 1,
-            client_id: 1,
-            amount: None,
-        });
 
         resolve.handle(&mut state).unwrap();
 
@@ -723,47 +749,50 @@ mod tests {
         assert_eq!(state.accounts[&1].total, 50.0);
     }
 
-    #[test]
-    fn test_chargeback_transaction_negative_balance_failed_chargeback() {
-        let mut state = State::default();
-
-        let deposit = Deposit::new(Transaction {
+    #[rstest]
+    #[case::test_chargeback_transaction_negative_balance_failed_chargeback(
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1,
             client_id: 1,
             amount: Some(100.0),
-        });
-
-        deposit.handle(&mut state).unwrap();
-
-        let withdrawal = Withdrawal::new(Transaction {
+        }),
+        Withdrawal::new(Transaction {
             tx_type: TxType::Withdrawal,
             tx_id: 2,
             client_id: 1,
             amount: Some(50.0),
-        });
-
-        withdrawal.handle(&mut state).unwrap();
-
-        let dispute = Dispute::new(Transaction {
+        }),
+        Dispute::new(Transaction {
             tx_type: TxType::Dispute,
             tx_id: 1,
             client_id: 1,
             amount: None,
-        });
+        }),
+        Chargeback::new(Transaction {
+            tx_type: TxType::Chargeback,
+            tx_id: 1,
+            client_id: 1,
+            amount: None,
+        })
+    )]
+    fn test_chargeback_transaction_negative_balance_failed_chargeback(
+        #[case] deposit: Deposit,
+        #[case] withdrawal: Withdrawal,
+        #[case] dispute: Dispute,
+        #[case] chargeback: Chargeback,
+    ) {
+        let mut state = State::default();
+
+        deposit.handle(&mut state).unwrap();
+
+        withdrawal.handle(&mut state).unwrap();
 
         dispute.handle(&mut state).unwrap();
 
         assert_eq!(state.accounts[&1].available, -50.0);
         assert_eq!(state.accounts[&1].held, 100.0);
         assert_eq!(state.accounts[&1].total, 50.0);
-
-        let chargeback = Chargeback::new(Transaction {
-            tx_type: TxType::Chargeback,
-            tx_id: 1,
-            client_id: 1,
-            amount: None,
-        });
 
         let res = chargeback.handle(&mut state);
 
@@ -779,34 +808,51 @@ mod tests {
         assert_eq!(state.accounts[&1].total, 50.0);
     }
 
-    #[test]
-    fn test_chargeback_transaction_negative_balance_chargeback_on_resolved() {
-        let mut state = State::default();
-
-        let deposit = Deposit::new(Transaction {
+    #[rstest]
+    #[case::test_chargeback_transaction_negative_balance_chargeback_on_resolved(
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1,
             client_id: 1,
             amount: Some(100.0),
-        });
-
-        deposit.handle(&mut state).unwrap();
-
-        let withdrawal = Withdrawal::new(Transaction {
+        }),
+        Withdrawal::new(Transaction {
             tx_type: TxType::Withdrawal,
             tx_id: 2,
             client_id: 1,
             amount: Some(50.0),
-        });
-
-        withdrawal.handle(&mut state).unwrap();
-
-        let dispute = Dispute::new(Transaction {
+        }),
+        Dispute::new(Transaction {
             tx_type: TxType::Dispute,
             tx_id: 1,
             client_id: 1,
             amount: None,
-        });
+        }),
+        Resolve::new(Transaction {
+            tx_type: TxType::Resolve,
+            tx_id: 1,
+            client_id: 1,
+            amount: None,
+        }),
+        Chargeback::new(Transaction {
+            tx_type: TxType::Chargeback,
+            tx_id: 1,
+            client_id: 1,
+            amount: None,
+        })
+    )]
+    fn test_chargeback_transaction_negative_balance_chargeback_on_resolved(
+        #[case] deposit: Deposit,
+        #[case] withdrawal: Withdrawal,
+        #[case] dispute: Dispute,
+        #[case] resolve: Resolve,
+        #[case] chargeback: Chargeback,
+    ) {
+        let mut state = State::default();
+
+        deposit.handle(&mut state).unwrap();
+
+        withdrawal.handle(&mut state).unwrap();
 
         dispute.handle(&mut state).unwrap();
 
@@ -814,25 +860,11 @@ mod tests {
         assert_eq!(state.accounts[&1].held, 100.0);
         assert_eq!(state.accounts[&1].total, 50.0);
 
-        let resolve = Resolve::new(Transaction {
-            tx_type: TxType::Resolve,
-            tx_id: 1,
-            client_id: 1,
-            amount: None,
-        });
-
         resolve.handle(&mut state).unwrap();
 
         assert_eq!(state.accounts[&1].available, 50.0);
         assert_eq!(state.accounts[&1].held, 0.0);
         assert_eq!(state.accounts[&1].total, 50.0);
-
-        let chargeback = Chargeback::new(Transaction {
-            tx_type: TxType::Chargeback,
-            tx_id: 1,
-            client_id: 1,
-            amount: None,
-        });
 
         let res = chargeback.handle(&mut state);
 
@@ -848,24 +880,43 @@ mod tests {
         assert_eq!(state.accounts[&1].total, 50.0);
     }
 
-    #[test]
-    fn test_account_locked_after_chargeback() {
-        let mut state = State::default();
-
-        let deposit = Deposit::new(Transaction {
+    #[rstest]
+    #[case::test_account_locked_after_chargeback(
+        Deposit::new(Transaction {
             tx_type: TxType::Deposit,
             tx_id: 1,
             client_id: 1,
             amount: Some(100.0),
-        });
-        deposit.handle(&mut state).unwrap();
-
-        let dispute = Dispute::new(Transaction {
+        }),
+        Dispute::new(Transaction {
             tx_type: TxType::Dispute,
             tx_id: 1,
             client_id: 1,
             amount: None,
-        });
+        }),
+        Chargeback::new(Transaction {
+            tx_type: TxType::Chargeback,
+            tx_id: 1,
+            client_id: 1,
+            amount: None,
+        }),
+        Deposit::new(Transaction {
+            tx_type: TxType::Deposit,
+            tx_id: 2,
+            client_id: 1,
+            amount: Some(50.0),
+        })
+    )]
+    fn test_account_locked_after_chargeback(
+        #[case] deposit: Deposit,
+        #[case] dispute: Dispute,
+        #[case] chargeback: Chargeback,
+        #[case] new_deposit: Deposit,
+    ) {
+        let mut state = State::default();
+
+        deposit.handle(&mut state).unwrap();
+
         dispute.handle(&mut state).unwrap();
 
         assert_eq!(state.accounts[&1].available, 0.0);
@@ -873,25 +924,12 @@ mod tests {
         assert_eq!(state.accounts[&1].total, 100.0);
         assert!(!state.accounts[&1].locked);
 
-        let chargeback = Chargeback::new(Transaction {
-            tx_type: TxType::Chargeback,
-            tx_id: 1,
-            client_id: 1,
-            amount: None,
-        });
         chargeback.handle(&mut state).unwrap();
 
         assert_eq!(state.accounts[&1].available, 0.0);
         assert_eq!(state.accounts[&1].held, 0.0);
         assert_eq!(state.accounts[&1].total, 0.0);
         assert!(state.accounts[&1].locked);
-
-        let new_deposit = Deposit::new(Transaction {
-            tx_type: TxType::Deposit,
-            tx_id: 3,
-            client_id: 1,
-            amount: Some(50.0),
-        });
 
         let res = new_deposit.handle(&mut state);
         assert!(matches!(
