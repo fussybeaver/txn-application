@@ -15,6 +15,7 @@ pub type ClientId = u16;
 pub type TxId = u32;
 pub type Amount = f32;
 
+/// Represents the Transaction type.
 #[derive(Copy, Clone, Debug, PartialEq, AsRefStr, EnumString, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TxType {
@@ -25,12 +26,15 @@ pub enum TxType {
     Chargeback,
 }
 
+/// Holds the mutable world state for the application, including Client accounts and previous
+/// transactions.
 #[derive(Default)]
 pub struct State {
     pub accounts: HashMap<ClientId, ClientAccount>,
     pub transactions: HashMap<TxId, Box<dyn TransactionHandler>>,
 }
 
+/// Identifies a Transaction as desieralized from the CSV file.
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct Transaction {
     #[serde(rename = "type")]
@@ -40,6 +44,9 @@ pub struct Transaction {
     pub amount: Option<f32>,
 }
 
+/// Embodies a Client account with a total balance, funds available to withdraw and funds held
+/// against chargebacks. A client account will be locked on a Chargeback transaction, which
+/// prevents further operations on that Client. This implementation never unlocks a client.
 #[derive(Debug, Default)]
 pub struct ClientAccount {
     pub client_id: u16,
@@ -49,6 +56,12 @@ pub struct ClientAccount {
     pub locked: bool,
 }
 
+/// A deposit transaction can have a status, dispute, resolve and chargeback transactions can only
+/// operate on target states:
+///
+///  - Dispute requires a Valid state, and sets the Deposit transaction into a Disputed state.
+///  - Resolve requires a Disputed state, and sets the Deposit transaction back to Valid state.
+///  - Chargeback requires a Disputed state, and sets the Deposit transaction to a Chargeback state.
 #[derive(Copy, Clone, Debug, Default, PartialEq, AsRefStr, EnumString)]
 pub enum TxStatus {
     #[default]
@@ -64,6 +77,8 @@ pub trait TransactionHandler {
     fn amount(&self) -> Option<Amount>;
     fn status(&self) -> TxStatus;
     fn set_status(&mut self, state: TxStatus);
+
+    /// Processes a transaction and updates the application's State.
     fn handle(self, state: &mut State) -> Result<(), TransactionError>;
 }
 
@@ -83,6 +98,7 @@ trait TransactionExt {
 }
 
 impl<T: TransactionHandler> TransactionExt for T {
+    /// Returns a MustBePositive error if the balance is below zero.
     fn check_positive(&self, amount: Amount) -> Result<(), TransactionError> {
         if amount < 0.0 {
             Err(TransactionError::MustBePositive {
@@ -94,6 +110,8 @@ impl<T: TransactionHandler> TransactionExt for T {
             Ok(())
         }
     }
+
+    /// Returns a BalanceInsufficient error if the balance is below a certain amount.
     fn check_sufficient_balance(
         &self,
         available: Amount,
@@ -110,6 +128,9 @@ impl<T: TransactionHandler> TransactionExt for T {
             Ok(())
         }
     }
+
+    /// Returns a ClientIdMismatch error if the Client Id doesn't match this transaction's Client
+    /// Id.
     fn check_client_id_mismatch(&self, client_id: ClientId) -> Result<(), TransactionError> {
         if client_id != self.client_id() {
             Err(TransactionError::ClientIdMismatch {
@@ -120,6 +141,9 @@ impl<T: TransactionHandler> TransactionExt for T {
             Ok(())
         }
     }
+
+    /// Returns a DuplicateTransaction error if the Deposit or Withdrawal has an identical
+    /// transaction id in the State.
     fn check_duplicate(
         &self,
         transactions: &HashMap<TxId, Box<dyn TransactionHandler>>,
@@ -130,6 +154,9 @@ impl<T: TransactionHandler> TransactionExt for T {
             Ok(())
         }
     }
+
+    /// Returns an AccountLocked error if the Client Account was locked through a successful
+    /// Chargeback transaction.
     fn check_locked(&self, account: &ClientAccount) -> Result<(), TransactionError> {
         if account.locked {
             Err(TransactionError::AccountLocked {

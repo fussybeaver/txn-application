@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 async-stream = { version = "0.3.6", default-features = false }
-clap = { version = "4.5.51", default-features = false, features = ["derive", "std"] }
+clap = { version = "4.5.51", default-features = false, features = ["derive", "help", "std"] }
 csv-async = { version = "1.3.1", default-features = false, features = ["tokio", "with_serde"] }
 futures-util = { version = "0.3.31", default-features = false }
 serde = { version = "1.0.228", default-features = false, features = ["derive"] }

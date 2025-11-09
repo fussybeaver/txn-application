@@ -5,6 +5,9 @@ use tokio::io::AsyncRead;
 
 use crate::{error::ParsingError, model::Transaction};
 
+/// Parse and deserialize a CSV. Errors will occur if the CSV is empty, I/O errors or on faulty
+/// deserialization. Receives an `AsyncRead`, so can be swapped into a async TCP server receiving
+/// TCP packets, returns a stream of deserialized Transactions.
 pub(crate) async fn parse_csv(
     read: impl AsyncRead + Unpin + Send,
 ) -> impl Stream<Item = Result<Transaction, ParsingError>> {
